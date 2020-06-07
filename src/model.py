@@ -56,8 +56,8 @@ class Model(Module):
             Linear(512, 512), BatchNorm1d(512), Tanh()
         )
         self.loading_seq = Sequential(
-            Linear(53, 512), ReLU(),
-            Linear(512, 1024), ReLU(), Dropout(),
+            Linear(26, 256), ReLU(),
+            Linear(256, 1024), ReLU(), Dropout(),
             Linear(1024, 512), BatchNorm1d(512), ReLU(),
             Linear(512, 512), ReLU(), Dropout(),
             Linear(512, 512), ReLU(), Dropout(),
