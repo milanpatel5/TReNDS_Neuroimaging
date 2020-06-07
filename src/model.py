@@ -24,34 +24,30 @@ class Model(Module):
     def __init__(self):
         super().__init__()
         self.fmri_feature0 = Sequential(
-            ExpansionBlock(32, 128, 32), ExpansionBlock(32, 128, 32),
-            ExpansionBlock(32, 128, 32, dilation=1),
-            ExpansionBlock(32, 128, 32), ExpansionBlock(32, 128, 32),
-            Flatten(), Linear(10, 256), Tanh(), Dropout(), Linear(256, 128), Tanh()
+            ExpansionBlock(16, 64, 16), ExpansionBlock(16, 64, 16),
+            ExpansionBlock(16, 64, 16, dilation=1),
+            ExpansionBlock(16, 64, 16), ExpansionBlock(16, 64, 8),
+            Flatten(), Linear(428400, 32), Tanh()
         )
         self.fmri_feature1 = Sequential(
-            ExpansionBlock(32, 128, 32), ExpansionBlock(32, 128, 32),
-            ExpansionBlock(32, 128, 32, dilation=2),
-            ExpansionBlock(32, 128, 32), ExpansionBlock(32, 128, 32),
-            Flatten(), Linear(11, 256), Tanh(), Dropout(), Linear(256, 128), Tanh()
+            ExpansionBlock(16, 64, 16), ExpansionBlock(16, 64, 16),
+            ExpansionBlock(16, 64, 16, dilation=2),
+            ExpansionBlock(16, 64, 16), ExpansionBlock(16, 64, 8),
+            Flatten(), Linear(363264, 32), Tanh()
         )
         self.fmri_feature2 = Sequential(
-            ExpansionBlock(32, 128, 32), ExpansionBlock(32, 128, 32),
-            ExpansionBlock(32, 128, 64, dilation=4),
-            ExpansionBlock(64, 128, 64), ExpansionBlock(64, 128, 32),
-            Flatten(), Linear(12, 256), Tanh(), Dropout(), Linear(256, 128), Tanh()
+            ExpansionBlock(16, 64, 16), ExpansionBlock(16, 64, 16),
+            ExpansionBlock(16, 64, 16, dilation=4),
+            ExpansionBlock(16, 64, 16), ExpansionBlock(16, 64, 8),
+            Flatten(), Linear(253344, 32), Tanh()
         )
         self.fmri_feature3 = Sequential(
-            ExpansionBlock(32, 128, 32, dilation=1), ExpansionBlock(32, 128, 32, dilation=2), ExpansionBlock(32, 128, 64, dilation=4),
-            ExpansionBlock(64, 128, 64), ExpansionBlock(64, 128, 32),
-            Flatten(), Linear(13, 256), Tanh(), Dropout(), Linear(256, 128), Tanh()
-        )
-        self.fmri_pre_seq = Sequential(
-            ExpansionBlock(53, 64, 32), ExpansionBlock(32, 64, 32), Dropout(),
-            ExpansionBlock(32, 128, 32), ExpansionBlock(32, 128, 32)
+            ExpansionBlock(16, 64, 16, dilation=1), ExpansionBlock(16, 64, 16, dilation=2), ExpansionBlock(16, 64, 32, dilation=4),
+            ExpansionBlock(32, 64, 16), ExpansionBlock(16, 128, 8),
+            Flatten(), Linear(207792, 32), Tanh()
         )
         self.fmri_post_seq = Sequential(
-            Linear(512, 1024), ReLU(), Dropout(),
+            Linear(128, 1024), ReLU(), Dropout(),
             Linear(1024, 512), BatchNorm1d(512), ReLU(),
             Linear(512, 512), BatchNorm1d(512), Tanh()
         )
