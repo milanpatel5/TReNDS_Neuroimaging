@@ -20,7 +20,7 @@ def main():
     model = Model().to(DEVICE)
     optimizer = Adam(params=model.parameters(), lr=1e-3, weight_decay=1e-3, amsgrad=True)
     loss_fn = FeatureWeightedLoss()
-    data_loader = DataLoader(mode='train', batch_size=2, device=DEVICE)
+    data_loader = DataLoader(mode='train', batch_size=4, device=DEVICE)
 
     for epoch_idx in range(0, N_EPOCH):
         progress_bar = tqdm(data_loader)
