@@ -11,7 +11,7 @@ from tqdm import tqdm
 from dataloader import DataLoader
 from model import Model
 
-DEVICE = torch.device('cpu')
+DEVICE = torch.device('cuda')
 N_EPOCH = 2
 
 
