@@ -16,7 +16,8 @@ class DataLoader:
         self.mode = mode
 
         self.loading = pandas.read_csv(DATASET_PATH + 'loading.csv', index_col='Id', dtype=numpy.float32)
-        self.train_scores = pandas.read_csv(DATASET_PATH + 'train_scores.csv', index_col='Id', dtype=numpy.float32, na_values=50)
+        self.train_scores = pandas.read_csv(DATASET_PATH + 'train_scores.csv', index_col='Id', dtype=numpy.float32)
+        self.train_scores = self.train_scores.fillna(self.train_scores.mean())
 
         if mode == 'train':
             self.train_set = [int(x) for x in self.train_scores.index.tolist()]
