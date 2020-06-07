@@ -8,7 +8,7 @@ class ExpansionBlock(Module):
     def __init__(self, in_channels, mid_channels, out_channels, kernel_size=3, dilation=1):
         super().__init__()
         self.expand = Sequential(Conv3d(in_channels=in_channels, out_channels=mid_channels, kernel_size=1), ReLU())
-        self.conv = Sequential(Conv3d(in_channels=mid_channels, out_channels=mid_channels, kernel_size=kernel_size, dilation=dilation), ReLU())
+        self.conv = Sequential(Conv3d(in_channels=mid_channels, out_channels=mid_channels, kernel_size=kernel_size, dilation=dilation, groups=mid_channels), ReLU())
         self.bottleneck = Sequential(Conv3d(in_channels=mid_channels, out_channels=out_channels, kernel_size=1), BatchNorm3d(out_channels))
 
     def forward(self, input: Tensor):
