@@ -11,21 +11,21 @@ from tqdm import tqdm
 from dataloader import DataLoader
 from model import Model
 
-DEVICE = torch.device('cuda')
+DEVICE = torch.device('cpu')
 N_EPOCH = 2
 
 
 def main():
     # noinspection PyUnresolvedReferences
     model = Model().to(DEVICE)
-    optimizer = Adam(params=model.parameters(), lr=1e-3, weight_decay=1e-3, amsgrad=True)
+    optimizer = Adam(params=model.parameters(), lr=2e-3, weight_decay=1e-3, amsgrad=True)
     loss_fn = FeatureWeightedLoss()
-    data_loader = DataLoader(mode='train', batch_size=4, device=DEVICE)
+    data_loader = DataLoader(mode='train', batch_size=2, device=DEVICE)
 
     for epoch_idx in range(0, N_EPOCH):
         progress_bar = tqdm(data_loader)
         mean_loss = 0
-        for idx, (fmri, loading, target) in enumerate(progress_bar):
+        for itr, (fmri, loading, target) in enumerate(progress_bar):
             progress_bar.set_description_str('Training epoch: {}/{}'.format(epoch_idx + 1, N_EPOCH))
             optimizer.zero_grad()
             output = model(fmri, loading)
@@ -33,9 +33,9 @@ def main():
             loss.backward()
             optimizer.step()
 
-            mean_loss = (mean_loss * idx * 1e-2 + loss.item()) / (idx * 1e-2 + 1)
+            mean_loss = (mean_loss * itr * 1e-2 + loss.item()) / (itr * 1e-2 + 1)
             progress_bar.set_postfix_str('loss={:.4f}'.format(mean_loss))
-            if idx % 10 == 0:
+            if itr % 10 == 0:
                 model.save()
 
 
