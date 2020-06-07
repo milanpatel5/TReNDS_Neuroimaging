@@ -6,7 +6,7 @@ import numpy
 import pandas
 import torch
 
-DATASET_PATH = 'dataset/'
+DATASET_PATH = '../../input/trends-assessment-prediction/'
 
 
 class DataLoader:
