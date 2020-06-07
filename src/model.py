@@ -23,6 +23,10 @@ class ExpansionBlock(Module):
 class Model(Module):
     def __init__(self):
         super().__init__()
+        self.fmri_pre_seq = Sequential(
+            ExpansionBlock(53, 64, 16), ExpansionBlock(16, 64, 16), Dropout(),
+            ExpansionBlock(16, 64, 16), ExpansionBlock(16, 64, 16)
+        )
         self.fmri_feature0 = Sequential(
             ExpansionBlock(16, 64, 16), ExpansionBlock(16, 64, 16),
             ExpansionBlock(16, 64, 16, dilation=1),
