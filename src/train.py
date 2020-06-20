@@ -17,29 +17,28 @@ N_EPOCH = 10
 def main():
     # noinspection PyUnresolvedReferences
     model = Model().to(DEVICE)
-    # model.load()
+    model.load()
 
+    data_loader = DataLoader(mode='train', batch_size=6, device=DEVICE)
     optimizer = Adam(params=model.parameters(), lr=0.0002, weight_decay=0.0001, amsgrad=True)
     loss_fn = FeatureWeightedLoss()
-    data_loader = DataLoader(mode='train', batch_size=6, device=DEVICE)
 
     model.train()
-    for epoch_idx in range(0, N_EPOCH):
-        progress_bar = tqdm(data_loader)
-        mean_loss = 0
-        for itr, (fmri, loading, target) in enumerate(progress_bar):
-            if fmri.shape[0] > 1:
-                progress_bar.set_description_str('Training epoch: {}/{}'.format(epoch_idx + 1, N_EPOCH))
-                optimizer.zero_grad()
-                output = model(fmri, loading)
-                loss = loss_fn(output, target)
-                loss.backward()
-                optimizer.step()
+    for epoch_idx in range(5, N_EPOCH):
+        with tqdm(data_loader) as progress_bar:
+            mean_loss = 0
+            for itr, (fmri, loading, target) in enumerate(progress_bar):
+                if fmri.shape[0] > 1:
+                    progress_bar.set_description_str('Training epoch: {}/{}'.format(epoch_idx + 1, N_EPOCH))
+                    optimizer.zero_grad()
+                    output = model(fmri, loading)
+                    loss = loss_fn(output, target)
+                    loss.backward()
+                    optimizer.step()
 
-                mean_loss = (mean_loss * itr * 1e-2 + loss.item()) / (itr * 1e-2 + 1)
-                progress_bar.set_postfix_str('loss={:.4f}'.format(mean_loss))
-            if itr % 10 == 0:
-                model.save()
+                    mean_loss = (mean_loss * itr * 1e-2 + loss.item()) / (itr * 1e-2 + 1)
+                    progress_bar.set_postfix_str('loss={:.4f}'.format(mean_loss))
+        model.save()
 
 
 class FeatureWeightedLoss(Module):
