@@ -19,13 +19,12 @@ def main():
     model = Model().to(DEVICE)
     model.load()
 
-    data_loader = DataLoader(mode='train', batch_size=6, device=DEVICE)
     optimizer = Adam(params=model.parameters(), lr=0.0002, weight_decay=0.0001, amsgrad=True)
     loss_fn = FeatureWeightedLoss()
 
     model.train()
     for epoch_idx in range(5, N_EPOCH):
-        with tqdm(data_loader) as progress_bar:
+        with tqdm(DataLoader(mode='train', batch_size=6, device=DEVICE)) as progress_bar:
             mean_loss = 0
             for itr, (fmri, loading, target) in enumerate(progress_bar):
                 if fmri.shape[0] > 1:
