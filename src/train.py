@@ -27,7 +27,7 @@ def main():
 
     model.train()
     for epoch_idx in range(0, N_EPOCH):
-        with tqdm(DataLoader(mode='train', batch_size=8, device=DEVICE)) as progress_bar:
+        with tqdm(DataLoader(mode='train', batch_size=10, device=DEVICE)) as progress_bar:
             mean_loss = 0
             for itr, (fmri, loading, target) in enumerate(progress_bar):
                 if fmri.shape[0] > 1:
@@ -38,7 +38,7 @@ def main():
                     loss.backward()
                     optimizer.step()
 
-                    mean_loss = (mean_loss * itr * 1e-2 + loss.item()) / (itr * 1e-2 + 1)
+                    mean_loss = (mean_loss * itr + loss.item()) / (itr + 1)
                     progress_bar.set_postfix_str('lr={:.4f}, loss={:.4f}'.format(lr_scheduler.get_last_lr()[0], mean_loss))
                 lr_scheduler.step(epoch_idx + itr / len(progress_bar))
         model.save()
