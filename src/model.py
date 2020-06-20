@@ -1,6 +1,6 @@
 import torch
 from torch import Tensor
-from torch.nn import Module, Sequential, Conv3d, ReLU, BatchNorm3d, Linear, Tanh, Dropout, BatchNorm1d
+from torch.nn import Module, Sequential, Conv3d, ReLU, BatchNorm3d, Linear, Tanh, Dropout, BatchNorm1d, MaxPool3d
 from torch.nn.modules.flatten import Flatten
 
 
@@ -25,33 +25,37 @@ class Model(Module):
         super().__init__()
         self.fmri_pre_seq = Sequential(
             ExpansionBlock(53, 64, 16), ExpansionBlock(16, 64, 16), Dropout(),
-            ExpansionBlock(16, 64, 16), ExpansionBlock(16, 64, 16)
+            ExpansionBlock(16, 64, 16), ExpansionBlock(16, 64, 16), MaxPool3d(kernel_size=2, stride=2)
         )
         self.fmri_feature0 = Sequential(
             ExpansionBlock(16, 64, 16), ExpansionBlock(16, 64, 16),
             ExpansionBlock(16, 64, 16, dilation=1),
-            ExpansionBlock(16, 64, 16), ExpansionBlock(16, 64, 8),
-            Flatten(), Linear(428400, 32), Tanh()
+            ExpansionBlock(16, 64, 16), MaxPool3d(kernel_size=2, stride=2),
+            ExpansionBlock(16, 64, 8),
+            Flatten(), Linear(1400, 256), Tanh()
         )
         self.fmri_feature1 = Sequential(
             ExpansionBlock(16, 64, 16), ExpansionBlock(16, 64, 16),
             ExpansionBlock(16, 64, 16, dilation=2),
-            ExpansionBlock(16, 64, 16), ExpansionBlock(16, 64, 8),
-            Flatten(), Linear(363264, 32), Tanh()
+            ExpansionBlock(16, 64, 16),
+            ExpansionBlock(16, 64, 8), MaxPool3d(kernel_size=2, stride=2),
+            Flatten(), Linear(1400, 256), Tanh()
         )
         self.fmri_feature2 = Sequential(
             ExpansionBlock(16, 64, 16), ExpansionBlock(16, 64, 16),
             ExpansionBlock(16, 64, 16, dilation=4),
-            ExpansionBlock(16, 64, 16), ExpansionBlock(16, 64, 8),
-            Flatten(), Linear(253344, 32), Tanh()
+            ExpansionBlock(16, 64, 16), MaxPool3d(kernel_size=2, stride=2),
+            ExpansionBlock(16, 64, 8),
+            Flatten(), Linear(128, 256), Tanh()
         )
         self.fmri_feature3 = Sequential(
             ExpansionBlock(16, 64, 16, dilation=1), ExpansionBlock(16, 64, 16, dilation=2), ExpansionBlock(16, 64, 32, dilation=4),
-            ExpansionBlock(32, 64, 16), ExpansionBlock(16, 128, 8),
-            Flatten(), Linear(207792, 32), Tanh()
+            ExpansionBlock(32, 64, 16),
+            ExpansionBlock(16, 128, 8),
+            Flatten(), Linear(1152, 256), Tanh()
         )
         self.fmri_post_seq = Sequential(
-            Linear(128, 1024), ReLU(), Dropout(),
+            Linear(1024, 1024), ReLU(), Dropout(),
             Linear(1024, 512), BatchNorm1d(512), ReLU(),
             Linear(512, 512), BatchNorm1d(512), Tanh()
         )
@@ -86,8 +90,5 @@ class Model(Module):
         torch.save(self.state_dict(), self.__class__.__name__)
 
     def load(self, device=None):
-        if device:
-            self.load_state_dict(torch.load(self.__class__.__name__, map_location=device))
-        else:
-            self.load_state_dict(torch.load(self.__class__.__name__))
+        self.load_state_dict(torch.load(self.__class__.__name__, map_location=device))
         self.eval()
