@@ -5,6 +5,7 @@ import torch
 from dateutil.relativedelta import relativedelta
 from torch.nn import Module, L1Loss
 from torch.optim.adam import Adam
+from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from tqdm import tqdm
 
 from dataloader import DataLoader
@@ -14,17 +15,19 @@ DEVICE = torch.device('cuda')
 N_EPOCH = 10
 
 
+# noinspection PyTypeChecker
+# noinspection PyUnresolvedReferences
 def main():
-    # noinspection PyUnresolvedReferences
     model = Model().to(DEVICE)
-    model.load()
+    # model.load()
 
-    optimizer = Adam(params=model.parameters(), lr=0.0002, weight_decay=0.0001, amsgrad=True)
+    optimizer = Adam(params=model.parameters(), lr=0.001)
+    lr_scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=1, eta_min=0.0001)
     loss_fn = FeatureWeightedLoss()
 
     model.train()
-    for epoch_idx in range(5, N_EPOCH):
-        with tqdm(DataLoader(mode='train', batch_size=6, device=DEVICE)) as progress_bar:
+    for epoch_idx in range(0, N_EPOCH):
+        with tqdm(DataLoader(mode='train', batch_size=8, device=DEVICE)) as progress_bar:
             mean_loss = 0
             for itr, (fmri, loading, target) in enumerate(progress_bar):
                 if fmri.shape[0] > 1:
@@ -36,7 +39,8 @@ def main():
                     optimizer.step()
 
                     mean_loss = (mean_loss * itr * 1e-2 + loss.item()) / (itr * 1e-2 + 1)
-                    progress_bar.set_postfix_str('loss={:.4f}'.format(mean_loss))
+                    progress_bar.set_postfix_str('lr={:.4f}, loss={:.4f}'.format(lr_scheduler.get_last_lr()[0], mean_loss))
+                lr_scheduler.step(epoch_idx + itr / len(progress_bar))
         model.save()
 
 
