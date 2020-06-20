@@ -1,78 +1,67 @@
 import torch
-from torch import Tensor
-from torch.nn import Module, Sequential, Conv3d, ReLU, BatchNorm3d, Linear, Tanh, Dropout, BatchNorm1d, MaxPool3d
+from torch.nn import Module, Sequential, ReLU, Linear, Tanh, Dropout, BatchNorm1d, MaxPool3d, Conv3d, LeakyReLU, BatchNorm3d
 from torch.nn.modules.flatten import Flatten
-
-
-class ExpansionBlock(Module):
-    def __init__(self, in_channels, mid_channels, out_channels, kernel_size=3, dilation=1):
-        super().__init__()
-        self.expand = Sequential(Conv3d(in_channels=in_channels, out_channels=mid_channels, kernel_size=1), ReLU())
-        self.conv = Sequential(Conv3d(in_channels=mid_channels, out_channels=mid_channels, kernel_size=kernel_size, dilation=dilation, groups=mid_channels), ReLU())
-        self.bottleneck = Sequential(Conv3d(in_channels=mid_channels, out_channels=out_channels, kernel_size=1), BatchNorm3d(out_channels))
-
-    def forward(self, input: Tensor):
-        x = self.expand(input)
-        x = self.conv(x)
-        x = self.bottleneck(x)
-        if input.shape == x.shape:
-            x = input + x
-        return x
 
 
 class Model(Module):
     def __init__(self):
         super().__init__()
         self.fmri_pre_seq = Sequential(
-            ExpansionBlock(53, 64, 16), ExpansionBlock(16, 64, 16), Dropout(),
-            ExpansionBlock(16, 64, 16), ExpansionBlock(16, 64, 16), MaxPool3d(kernel_size=2, stride=2)
+            Conv3d(53, 64, kernel_size=3), LeakyReLU(),
+            Conv3d(64, 64, kernel_size=3), LeakyReLU(),
+            Conv3d(64, 64, kernel_size=3), LeakyReLU(), BatchNorm3d(64),
+            MaxPool3d(kernel_size=2, stride=2),
+            Conv3d(64, 128, kernel_size=3), LeakyReLU(),
+            Conv3d(128, 128, kernel_size=3), LeakyReLU(), BatchNorm3d(128),
+            Conv3d(128, 128, kernel_size=3), LeakyReLU(), Dropout(),
         )
         self.fmri_feature0 = Sequential(
-            ExpansionBlock(16, 64, 16), ExpansionBlock(16, 64, 16),
-            ExpansionBlock(16, 64, 16, dilation=1),
-            ExpansionBlock(16, 64, 16), MaxPool3d(kernel_size=2, stride=2),
-            ExpansionBlock(16, 64, 8),
-            Flatten(), Linear(1400, 256), Tanh()
+            Conv3d(128, 128, kernel_size=3), LeakyReLU(),
+            Conv3d(128, 128, kernel_size=3), LeakyReLU(), Dropout(),
+            Conv3d(128, 128, kernel_size=3, stride=1), BatchNorm3d(128), LeakyReLU(),
+            Conv3d(128, 128, kernel_size=3), LeakyReLU(),
+            MaxPool3d(kernel_size=2, stride=2),
+            Flatten(), Linear(14336, 256), ReLU()
         )
         self.fmri_feature1 = Sequential(
-            ExpansionBlock(16, 64, 16), ExpansionBlock(16, 64, 16),
-            ExpansionBlock(16, 64, 16, dilation=2),
-            ExpansionBlock(16, 64, 16),
-            ExpansionBlock(16, 64, 8), MaxPool3d(kernel_size=2, stride=2),
-            Flatten(), Linear(1400, 256), Tanh()
+            Conv3d(128, 128, kernel_size=3), LeakyReLU(),
+            Conv3d(128, 128, kernel_size=3), LeakyReLU(), Dropout(),
+            Conv3d(128, 128, kernel_size=3, stride=2), BatchNorm3d(128), LeakyReLU(),
+            Conv3d(128, 128, kernel_size=3), LeakyReLU(),
+            MaxPool3d(kernel_size=2, stride=2),
+            Flatten(), Linear(1536, 256), ReLU()
         )
         self.fmri_feature2 = Sequential(
-            ExpansionBlock(16, 64, 16), ExpansionBlock(16, 64, 16),
-            ExpansionBlock(16, 64, 16, dilation=4),
-            ExpansionBlock(16, 64, 16), MaxPool3d(kernel_size=2, stride=2),
-            ExpansionBlock(16, 64, 8),
-            Flatten(), Linear(128, 256), Tanh()
+            Conv3d(128, 128, kernel_size=3), LeakyReLU(),
+            Conv3d(128, 128, kernel_size=3), LeakyReLU(), Dropout(),
+            Conv3d(128, 128, kernel_size=3, stride=4), BatchNorm3d(128), LeakyReLU(),
+            Flatten(), Linear(4608, 256), ReLU()
         )
         self.fmri_feature3 = Sequential(
-            ExpansionBlock(16, 64, 16, dilation=1), ExpansionBlock(16, 64, 16, dilation=2), ExpansionBlock(16, 64, 32, dilation=4),
-            ExpansionBlock(32, 64, 16),
-            ExpansionBlock(16, 128, 8),
-            Flatten(), Linear(1152, 256), Tanh()
+            Conv3d(128, 128, kernel_size=3), LeakyReLU(),
+            Conv3d(128, 128, kernel_size=3), LeakyReLU(), Dropout(),
+            Conv3d(128, 128, kernel_size=3, stride=8), BatchNorm3d(128), LeakyReLU(),
+            Flatten(), Linear(1024, 256), ReLU()
         )
         self.fmri_post_seq = Sequential(
-            Linear(1024, 1024), ReLU(), Dropout(),
-            Linear(1024, 512), BatchNorm1d(512), ReLU(),
-            Linear(512, 512), BatchNorm1d(512), Tanh()
+            Linear(1024, 1024), LeakyReLU(), Dropout(),
+            Linear(1024, 512), BatchNorm1d(512), LeakyReLU(),
+            Linear(512, 512), BatchNorm1d(512)
         )
         self.loading_seq = Sequential(
-            Linear(26, 256), ReLU(),
-            Linear(256, 1024), ReLU(), Dropout(),
-            Linear(1024, 512), BatchNorm1d(512), ReLU(),
-            Linear(512, 512), ReLU(), Dropout(),
-            Linear(512, 512), ReLU(), Dropout(),
-            Linear(512, 512), BatchNorm1d(512), Tanh()
+            Linear(26, 256), LeakyReLU(),
+            Linear(256, 1024), LeakyReLU(), Dropout(),
+            Linear(1024, 512), BatchNorm1d(512), LeakyReLU(),
+            Linear(512, 512), LeakyReLU(), Dropout(),
+            Linear(512, 512), LeakyReLU(), Dropout(),
+            Linear(512, 512), BatchNorm1d(512), ReLU()
         )
         self.final_seq = Sequential(
-            Linear(1024, 1024), ReLU(), Dropout(),
-            Linear(1024, 512), BatchNorm1d(512), ReLU(),
-            Linear(512, 512), BatchNorm1d(512), ReLU(),
-            Linear(512, 128), BatchNorm1d(128), ReLU(),
-            Linear(128, 5), BatchNorm1d(5), ReLU()
+            Linear(1024, 1024), LeakyReLU(), Dropout(),
+            Linear(1024, 512), BatchNorm1d(512), LeakyReLU(),
+            Linear(512, 512), BatchNorm1d(512), LeakyReLU(),
+            Linear(512, 128), LeakyReLU(),
+            Linear(128, 5), ReLU()
         )
 
     def forward(self, fmri, loading):
