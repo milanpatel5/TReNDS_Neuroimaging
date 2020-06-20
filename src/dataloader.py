@@ -45,13 +45,17 @@ class DataLoader:
             if len(batch_idx) <= 1:
                 self._stop_and_reset_idx_()
 
-            fmri_batch = [h5py.File(DATASET_PATH + 'fMRI_train/' + str(self.train_set[idx]) + '.mat')['SM_feature'].value for idx in batch_idx]
-            loading_batch = [self.loading.loc[self.train_set[idx]].to_numpy() for idx in batch_idx]
-            target_batch = [self.train_scores.loc[self.train_set[idx]].to_numpy() for idx in batch_idx]
-
-            fmri_batch = torch.tensor(fmri_batch, dtype=torch.float32, device=self.device)
-            loading_batch = torch.tensor(loading_batch, dtype=torch.float32, device=self.device)
-            target_batch = torch.tensor(target_batch, dtype=torch.float32, device=self.device)
+            try:
+                fmri_batch = [h5py.File(DATASET_PATH + 'fMRI_train/' + str(self.train_set[idx]) + '.mat')['SM_feature'].value for idx in batch_idx]
+                loading_batch = [self.loading.loc[self.train_set[idx]].to_numpy() for idx in batch_idx]
+                target_batch = [self.train_scores.loc[self.train_set[idx]].to_numpy() for idx in batch_idx]
+                fmri_batch = torch.tensor(fmri_batch, dtype=torch.float32, device=self.device)
+                loading_batch = torch.tensor(loading_batch, dtype=torch.float32, device=self.device)
+                target_batch = torch.tensor(target_batch, dtype=torch.float32, device=self.device)
+            except:
+                fmri_batch = torch.tensor([], dtype=torch.float32, device=self.device)
+                loading_batch = torch.tensor([], dtype=torch.float32, device=self.device)
+                target_batch = torch.tensor([], dtype=torch.float32, device=self.device)
             return fmri_batch, loading_batch, target_batch
 
         elif self.mode == 'predict':
