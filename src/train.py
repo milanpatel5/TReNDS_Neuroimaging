@@ -1,4 +1,3 @@
-import os
 import time
 import warnings
 
@@ -11,30 +10,34 @@ from tqdm import tqdm
 from dataloader import DataLoader
 from model import Model
 
-DEVICE = torch.device('cpu')
-N_EPOCH = 2
+DEVICE = torch.device('cuda')
+N_EPOCH = 10
 
 
 def main():
     # noinspection PyUnresolvedReferences
     model = Model().to(DEVICE)
-    optimizer = Adam(params=model.parameters(), lr=2e-3, weight_decay=1e-3, amsgrad=True)
-    loss_fn = FeatureWeightedLoss()
-    data_loader = DataLoader(mode='train', batch_size=2, device=DEVICE)
+    # model.load()
 
+    optimizer = Adam(params=model.parameters(), lr=0.0002, weight_decay=0.0001, amsgrad=True)
+    loss_fn = FeatureWeightedLoss()
+    data_loader = DataLoader(mode='train', batch_size=6, device=DEVICE)
+
+    model.train()
     for epoch_idx in range(0, N_EPOCH):
         progress_bar = tqdm(data_loader)
         mean_loss = 0
         for itr, (fmri, loading, target) in enumerate(progress_bar):
-            progress_bar.set_description_str('Training epoch: {}/{}'.format(epoch_idx + 1, N_EPOCH))
-            optimizer.zero_grad()
-            output = model(fmri, loading)
-            loss = loss_fn(output, target)
-            loss.backward()
-            optimizer.step()
+            if fmri.shape[0] > 1:
+                progress_bar.set_description_str('Training epoch: {}/{}'.format(epoch_idx + 1, N_EPOCH))
+                optimizer.zero_grad()
+                output = model(fmri, loading)
+                loss = loss_fn(output, target)
+                loss.backward()
+                optimizer.step()
 
-            mean_loss = (mean_loss * itr * 1e-2 + loss.item()) / (itr * 1e-2 + 1)
-            progress_bar.set_postfix_str('loss={:.4f}'.format(mean_loss))
+                mean_loss = (mean_loss * itr * 1e-2 + loss.item()) / (itr * 1e-2 + 1)
+                progress_bar.set_postfix_str('loss={:.4f}'.format(mean_loss))
             if itr % 10 == 0:
                 model.save()
 
@@ -52,12 +55,12 @@ class FeatureWeightedLoss(Module):
 
 
 if __name__ == '__main__':
-    os.nice(2)
+    # os.nice(2)
     torch.set_num_threads(8)
     warnings.filterwarnings('ignore')
     start_time = time.time()
 
     main()
 
-    time_delta = relativedelta(seconds=(time.time() - start_time))
+    time_delta = relativedelta(seconds=int(time.time() - start_time))
     print('\n\nTime taken: ' + (' '.join('{} {}'.format(round(getattr(time_delta, k), ndigits=2), k) for k in ['days', 'hours', 'minutes', 'seconds'] if getattr(time_delta, k))))
