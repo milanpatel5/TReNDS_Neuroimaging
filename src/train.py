@@ -12,22 +12,22 @@ from dataloader import DataLoader
 from model import Model
 
 DEVICE = torch.device('cuda')
-N_EPOCH = 10
+N_EPOCH = 50
 
 
 # noinspection PyTypeChecker
 # noinspection PyUnresolvedReferences
 def main():
     model = Model().to(DEVICE)
-    # model.load()
+    model.load()
 
     optimizer = Adam(params=model.parameters(), lr=0.001)
-    lr_scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=1, eta_min=0.0001)
+    lr_scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=1, eta_min=0.00001)
     loss_fn = FeatureWeightedLoss()
 
     model.train()
-    for epoch_idx in range(0, N_EPOCH):
-        with tqdm(DataLoader(mode='train', batch_size=10, device=DEVICE)) as progress_bar:
+    for epoch_idx in range(10, N_EPOCH):
+        with tqdm(DataLoader(mode='train', batch_size=4, device=DEVICE)) as progress_bar:
             mean_loss = 0
             for itr, (fmri, loading, target) in enumerate(progress_bar):
                 if fmri.shape[0] > 1:

@@ -1,5 +1,6 @@
 import random
 from math import ceil
+from multiprocessing import Pool
 from threading import Thread
 
 import h5py
@@ -42,21 +43,15 @@ class DataLoader:
             return
 
         if self.mode == 'train':
-            fmri_batch, loading_batch, target_batch = [], [], []
-            batch_cap = self.batch_size
-            while batch_cap > 0 and self.idx < self.data_set_length:
-                # noinspection PyBroadException
-                try:
-                    fmri_batch.append(h5py.File(DATASET_PATH + 'fMRI_train/' + str(self.train_set[self.idx]) + '.mat')['SM_feature'].value)
-                    loading_batch.append(self.loading.loc[self.train_set[self.idx]].to_numpy())
-                    target_batch.append(self.train_scores.loc[self.train_set[self.idx]].to_numpy())
-                    self.idx += 1
-                    batch_cap -= 1
-                except:
-                    self.idx += 1
-            fmri_batch = torch.tensor(fmri_batch, dtype=torch.float32, device=self.device)
-            loading_batch = torch.tensor(loading_batch, dtype=torch.float32, device=self.device)
-            target_batch = torch.tensor(target_batch, dtype=torch.float32, device=self.device)
+            idx_range = range(self.idx, min(self.idx + self.batch_size, self.data_set_length))
+            self.idx = min(self.idx + self.batch_size, self.data_set_length)
+
+            with Pool(processes=self.batch_size) as thread_pool:
+                fmri_batch = torch.tensor(thread_pool.map(self._prepare_train_data_util_, [self.train_set[idx] for idx in idx_range]), dtype=torch.float32, device=self.device)
+                thread_pool.terminate()
+            loading_batch = torch.tensor([self.loading.loc[self.train_set[idx]].to_numpy() for idx in idx_range], dtype=torch.float32, device=self.device)
+            target_batch = torch.tensor([self.train_scores.loc[self.train_set[idx]].to_numpy() for idx in idx_range], dtype=torch.float32, device=self.device)
+
             self.batch_data = (fmri_batch, loading_batch, target_batch)
 
         elif self.mode == 'predict':
@@ -75,6 +70,10 @@ class DataLoader:
 
         else:
             raise Exception('Please select a valid DataLoader mode...')
+
+    @staticmethod
+    def _prepare_train_data_util_(idx):
+        return h5py.File(DATASET_PATH + 'fMRI_train/' + str(idx) + '.mat', mode='r')['SM_feature'][()]
 
     def __next__(self):
         if self.batch_data is None and self.idx == self.data_set_length:
