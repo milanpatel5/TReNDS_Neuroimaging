@@ -25,7 +25,7 @@ class DataLoader:
             self.length = int(ceil(len(self.train_set) / self.batch_size))
             self.data_set_length = len(self.train_set)
             random.shuffle(self.train_set)
-        elif mode == 'valid':
+        elif mode == 'predict':
             self.predict_set = [int(x) for x in set(self.loading.index.tolist()) - set(self.train_scores.index.tolist())]
             self.length = int(ceil(len(self.predict_set) / self.batch_size))
             self.data_set_length = len(self.predict_set)
@@ -60,13 +60,18 @@ class DataLoader:
             self.batch_data = (fmri_batch, loading_batch, target_batch)
 
         elif self.mode == 'predict':
-            batch_idx = range(self.idx * self.batch_size, (self.idx + 1) * self.batch_size)
-
-            fmri_batch = [h5py.File(DATASET_PATH + 'fMRI_test/' + str(self.predict_set[idx]) + '.mat')['SM_feature'].value for idx in batch_idx]
-            loading_batch = [self.loading.loc[self.predict_set[idx]].to_numpy() for idx in batch_idx]
-
+            ids_batch, fmri_batch, loading_batch = [], [], []
+            batch_cap = self.batch_size
+            while batch_cap > 0 and self.idx < self.data_set_length:
+                ids_batch.append(str(self.predict_set[self.idx]))
+                fmri_batch.append(h5py.File(DATASET_PATH + 'fMRI_test/' + str(self.predict_set[self.idx]) + '.mat')['SM_feature'].value)
+                loading_batch.append(self.loading.loc[self.predict_set[self.idx]].to_numpy())
+                self.idx += 1
+                batch_cap -= 1
+            ids_batch = numpy.array(ids_batch)
             fmri_batch = torch.tensor(fmri_batch, dtype=torch.float32, device=self.device)
             loading_batch = torch.tensor(loading_batch, dtype=torch.float32, device=self.device)
+            self.batch_data = (ids_batch, fmri_batch, loading_batch)
 
         else:
             raise Exception('Please select a valid DataLoader mode...')

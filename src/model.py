@@ -80,4 +80,5 @@ class Model(Module):
 
     def load(self, device=None):
         self.load_state_dict(torch.load(self.__class__.__name__, map_location=device))
+        self.to(device)
         self.eval()
