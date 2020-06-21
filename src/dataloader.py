@@ -59,7 +59,7 @@ class DataLoader:
             batch_cap = self.batch_size
             while batch_cap > 0 and self.idx < self.data_set_length:
                 ids_batch.append(str(self.predict_set[self.idx]))
-                fmri_batch.append(h5py.File(DATASET_PATH + 'fMRI_test/' + str(self.predict_set[self.idx]) + '.mat')['SM_feature'].value)
+                fmri_batch.append(h5py.File('D:/Projects/' + 'fMRI_test/' + str(self.predict_set[self.idx]) + '.mat')['SM_feature'].value)
                 loading_batch.append(self.loading.loc[self.predict_set[self.idx]].to_numpy())
                 self.idx += 1
                 batch_cap -= 1
