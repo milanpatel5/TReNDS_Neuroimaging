@@ -22,12 +22,12 @@ def main():
     model.load()
 
     optimizer = Adam(params=model.parameters(), lr=0.001)
-    lr_scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=1, eta_min=0.00001)
+    lr_scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=1, eta_min=0.0001)
     loss_fn = FeatureWeightedLoss()
 
     model.train()
-    for epoch_idx in range(10, N_EPOCH):
-        with tqdm(DataLoader(mode='train', batch_size=4, device=DEVICE)) as progress_bar:
+    for epoch_idx in range(24, N_EPOCH):
+        with tqdm(DataLoader(mode='train', batch_size=8, device=DEVICE)) as progress_bar:
             mean_loss = 0
             for itr, (fmri, loading, target) in enumerate(progress_bar):
                 if fmri.shape[0] > 1:
@@ -39,7 +39,7 @@ def main():
                     optimizer.step()
 
                     mean_loss = (mean_loss * itr + loss.item()) / (itr + 1)
-                    progress_bar.set_postfix_str('lr={:.4f}, loss={:.4f}'.format(lr_scheduler.get_last_lr()[0], mean_loss))
+                    progress_bar.set_postfix_str('lr={:.6f}, loss={:.4f}'.format(lr_scheduler.get_last_lr()[0], mean_loss))
                 lr_scheduler.step(epoch_idx + itr / len(progress_bar))
         model.save()
 
@@ -58,7 +58,7 @@ class FeatureWeightedLoss(Module):
 
 if __name__ == '__main__':
     # os.nice(2)
-    torch.set_num_threads(8)
+    torch.set_num_threads(12)
     warnings.filterwarnings('ignore')
     start_time = time.time()
 
