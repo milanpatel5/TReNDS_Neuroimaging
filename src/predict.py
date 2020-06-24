@@ -21,7 +21,7 @@ def main():
         csv_writer.writerow(['Id', 'Predicted'])
         attrs = ['_age', '_domain1_var1', '_domain1_var2', '_domain2_var1', '_domain2_var2']
 
-        with tqdm(DataLoader(mode='predict', batch_size=4, device=DEVICE)) as progress_bar:
+        with tqdm(DataLoader(mode='predict', batch_size=2, device=DEVICE)) as progress_bar:
             progress_bar.set_description_str('Generating predictions')
             for itr, (ids, fmri, loading) in enumerate(progress_bar):
                 output = model(fmri, loading)
